@@ -1,0 +1,19 @@
+<launch>
+    <arg name="devport" default="/dev/ttyUSB0" />
+    <arg name="rviz" default="true" />
+    <arg name="frame_id" default="/base" />
+
+    <node pkg="rosserial_python" type="serial_node.py" name="serial_node" output="screen" >
+        <param name="baud" value="921600" />
+        <param name="port" value="$(arg devport)" />
+    </node>
+    <node pkg="rosserial_python" type="message_info_service.py" name="rosserial_message_info" />
+
+    <node pkg="jsk_imu_mini_demo" type="sample_rpy_publisher" name="sample_rpy_publisher" output="screen"
+        args="/imu $(arg frame_id)" />
+
+    <group if="$(arg rviz)">
+        <node pkg="rviz" type="rviz" name="rviz"
+            args="-d $(find jsk_imu_mini_demo)/config/marker.rviz" />
+    </group>
+</launch>
