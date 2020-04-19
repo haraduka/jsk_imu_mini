@@ -1,4 +1,4 @@
-/* 
+/*
  * Software License Agreement (BSD License)
  *
  * Copyright (c) 2011, Willow Garage, Inc.
@@ -36,78 +36,104 @@
 #define ROS_SUBSCRIBER_H_
 
 #include "rosserial_msgs/TopicInfo.h"
-#include <functional>
 
-namespace ros {
+namespace ros
+{
 
-  /* Base class for objects subscribers. */
-  class Subscriber_
+/* Base class for objects subscribers. */
+class Subscriber_
+{
+public:
+  virtual void callback(unsigned char *data) = 0;
+  virtual int getEndpointType() = 0;
+
+  // id_ is set by NodeHandle when we advertise
+  int id_;
+
+  virtual const char * getMsgType() = 0;
+  virtual const char * getMsgMD5() = 0;
+  const char * topic_;
+};
+
+/* Bound function subscriber. */
+template<typename MsgT, typename ObjT = void>
+class Subscriber: public Subscriber_
+{
+public:
+  typedef void(ObjT::*CallbackT)(const MsgT&);
+  MsgT msg;
+
+  Subscriber(const char * topic_name, CallbackT cb, ObjT* obj, int endpoint = rosserial_msgs::TopicInfo::ID_SUBSCRIBER) :
+    cb_(cb),
+    obj_(obj),
+    endpoint_(endpoint)
   {
-    public:
-      virtual void callback(unsigned char *data)=0;
-      virtual int getEndpointType()=0;
-
-      // id_ is set by NodeHandle when we advertise 
-      int id_;
-
-      virtual const char * getMsgType()=0;
-      virtual const char * getMsgMD5()=0;
-      const char * topic_;
+    topic_ = topic_name;
   };
 
-  /* Actual subscriber, templated on message type. */
-  template<class MsgT>
-  class Subscriber: public Subscriber_{
-    public:
-      typedef void(*CallbackT)(const MsgT&);
-      MsgT msg;
+  virtual void callback(unsigned char* data)
+  {
+    msg.deserialize(data);
+    (obj_->*cb_)(msg);
+  }
 
-      Subscriber(const char * topic_name, CallbackT cb, int endpoint=rosserial_msgs::TopicInfo::ID_SUBSCRIBER) :cb_(cb),endpoint_(endpoint)
-      {
-        topic_ = topic_name;
-      };
+  virtual const char * getMsgType()
+  {
+    return this->msg.getType();
+  }
+  virtual const char * getMsgMD5()
+  {
+    return this->msg.getMD5();
+  }
+  virtual int getEndpointType()
+  {
+    return endpoint_;
+  }
 
-      virtual void callback(unsigned char* data){
-        msg.deserialize(data);
-        this->cb_(msg);
-      }
+private:
+  CallbackT cb_;
+  ObjT* obj_;
+  int endpoint_;
+};
 
-      virtual const char * getMsgType(){ return this->msg.getType(); }
-      virtual const char * getMsgMD5(){ return this->msg.getMD5(); }
-      virtual int getEndpointType(){ return endpoint_; }
+/* Standalone function subscriber. */
+template<typename MsgT>
+class Subscriber<MsgT, void>: public Subscriber_
+{
+public:
+  typedef void(*CallbackT)(const MsgT&);
+  MsgT msg;
 
-    private:
-      std::pointer_to_unary_function<const MsgT&, void> cb_;
-      int endpoint_;
+  Subscriber(const char * topic_name, CallbackT cb, int endpoint = rosserial_msgs::TopicInfo::ID_SUBSCRIBER) :
+    cb_(cb),
+    endpoint_(endpoint)
+  {
+    topic_ = topic_name;
   };
 
-  template<class MsgT, class T>
-  class Subscriber2: public Subscriber_{
-    public:
-      typedef void(T::*CallbackT)(const MsgT&);
-      MsgT msg;
+  virtual void callback(unsigned char* data)
+  {
+    msg.deserialize(data);
+    this->cb_(msg);
+  }
 
-      Subscriber2(const char * topic_name, CallbackT cb, T *obj,  int endpoint=rosserial_msgs::TopicInfo::ID_SUBSCRIBER) :
-        obj_(obj), fun_obj_(cb), endpoint_(endpoint)
-      {
-        //std::binder1st t  = std::bind1st(std::mem_fun1_t())
-        topic_ = topic_name;
-      };
+  virtual const char * getMsgType()
+  {
+    return this->msg.getType();
+  }
+  virtual const char * getMsgMD5()
+  {
+    return this->msg.getMD5();
+  }
+  virtual int getEndpointType()
+  {
+    return endpoint_;
+  }
 
-      virtual void callback(unsigned char* data){
-        msg.deserialize(data);
-        this->fun_obj_(obj_, msg);
-      }
-
-      virtual const char * getMsgType(){ return this->msg.getType(); }
-      virtual const char * getMsgMD5(){ return this->msg.getMD5(); }
-      virtual int getEndpointType(){ return endpoint_; }
-
-    private:
-      T* obj_;
-      std::mem_fun1_t<void, T, const MsgT&> fun_obj_;
-      int endpoint_;
-  };
+private:
+  CallbackT cb_;
+  int endpoint_;
+};
 
 }
 

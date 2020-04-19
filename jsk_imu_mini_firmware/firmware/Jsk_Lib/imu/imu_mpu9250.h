@@ -116,7 +116,7 @@ private:
   SPI_HandleTypeDef* hspi_;
 
   ros::NodeHandle* nh_;
-  ros::Subscriber2<std_msgs::UInt8, IMU>* imu_config_sub_;
+  ros::Subscriber<std_msgs::UInt8, IMU>* imu_config_sub_;
 
   uint8_t acc_gyro_calib_flag_;
   uint8_t mag_calib_flag_;

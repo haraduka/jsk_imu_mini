@@ -25,8 +25,7 @@ void IMU::init(SPI_HandleTypeDef* hspi, ros::NodeHandle* nh)
   mag_.zero();
   nh_ = nh;
 
-  imu_config_sub_ = new ros::Subscriber2<std_msgs::UInt8, IMU>("/imu_config_cmd", &IMU::imuConfigCallback, this);
-  nh_->subscribe<std_msgs::UInt8, IMU>(*imu_config_sub_);
+  imu_config_sub_ = new ros::Subscriber<std_msgs::UInt8, IMU>("/imu_config_cmd", &IMU::imuConfigCallback, this);
 
   ahb_suspend_flag_ = false;
   mag_filtering_flag_ = true;
@@ -45,8 +44,6 @@ void IMU::init(SPI_HandleTypeDef* hspi, ros::NodeHandle* nh)
 
 uint16_t IMU::update(uint16_t queue_size)
 {
-  if (nh_->connected() && (!nh_->getHardware()->getUartDriver()->getTx()->idleFlag()))
-    ahb_suspend_flag_ = true;  // should suspend USART1 of DMA(ros) for a while
 
   read();  // read from SPI
 

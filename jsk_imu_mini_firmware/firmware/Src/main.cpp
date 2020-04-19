@@ -130,7 +130,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   /**********************************/
   {
-    nh_.initNode(&huart1);
+    nh_.initNode();
     /* ugv ros node */
     testnode = new RosNode(&nh_);
     /* Sensors */
