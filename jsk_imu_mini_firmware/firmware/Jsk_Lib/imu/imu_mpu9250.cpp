@@ -33,7 +33,7 @@ void IMU::init(SPI_HandleTypeDef* hspi, ros::NodeHandle* nh)
   mag_outlier_counter_ = 0;
 
   hspi_ = hspi;
-  readCalibData();
+  // readCalibData();
   gyroInit();
   accInit();
   magInit();

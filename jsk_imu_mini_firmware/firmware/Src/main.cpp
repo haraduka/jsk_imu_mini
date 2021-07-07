@@ -87,7 +87,7 @@ void HAL_SYSTICK_Callback(void)
   {
     /* publish message */
     /* state estimate */
-    if (counter++ > 8)
+    if (counter++ > 0)
     {
       counter = 0;
       imu_.update();
